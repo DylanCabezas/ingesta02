@@ -10,7 +10,7 @@ def leer_datos_mysql(host, user, password, database, tabla, archivo_csv):
             user=user,
             password=password,
             database=database,
-            port=3306
+            port=8005
         )
 
         cursor = conexion.cursor()
