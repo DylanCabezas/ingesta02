@@ -48,7 +48,7 @@ if __name__ == "__main__":
     host_aws = "172.31.31.107"
     usuario = "root"
     contraseña = "utec"
-    base_datos = "mysql_c"
+    base_datos = "bd_api_employees"
     nombre_tabla = "employees"
     archivo_salida = "data.csv"
 
