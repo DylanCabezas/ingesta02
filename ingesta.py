@@ -1,34 +1,25 @@
 import mysql.connector
 import pandas as pd
+import boto3
+from botocore.exceptions import NoCredentialsError, ClientError
 
 def leer_datos_mysql(host, user, password, database, tabla, archivo_csv):
     try:
-        # Conectar a la base de datos MySQL
         conexion = mysql.connector.connect(
             host=host,
             user=user,
             password=password,
             database=database,
-            port=3306  # Cambia si usas otro puerto
+            port=3306
         )
 
-        # Crear un cursor para ejecutar consultas
         cursor = conexion.cursor()
-
-        # Ejecutar la consulta para obtener todos los registros
         query = f"SELECT * FROM {tabla}"
         cursor.execute(query)
-
-        # Obtener los nombres de columnas
         columnas = [desc[0] for desc in cursor.description]
-
-        # Obtener todos los registros
         registros = cursor.fetchall()
 
-        # Crear un DataFrame con los datos
         df = pd.DataFrame(registros, columns=columnas)
-
-        # Guardar en archivo CSV
         df.to_csv(archivo_csv, index=False, encoding='utf-8')
 
         print(f"Datos guardados en {archivo_csv}")
@@ -40,8 +31,20 @@ def leer_datos_mysql(host, user, password, database, tabla, archivo_csv):
             cursor.close()
             conexion.close()
 
+def subir_a_s3(nombre_archivo_local, bucket_name, nombre_archivo_s3):
+    try:
+        s3 = boto3.client('s3')
+        s3.upload_file(nombre_archivo_local, bucket_name, nombre_archivo_s3)
+        print(f"Archivo '{nombre_archivo_local}' subido exitosamente al bucket '{bucket_name}' como '{nombre_archivo_s3}'")
+    except FileNotFoundError:
+        print(f"Error: El archivo {nombre_archivo_local} no existe.")
+    except NoCredentialsError:
+        print("Error: Credenciales AWS no encontradas.")
+    except ClientError as e:
+        print(f"Error al subir archivo: {e}")
+
 if __name__ == "__main__":
-    # Parámetros de conexión (modifica con tus datos)
+    # Parámetros MySQL
     host_aws = "172.31.31.107"
     usuario = "root"
     contraseña = "utec"
@@ -49,4 +52,12 @@ if __name__ == "__main__":
     nombre_tabla = "employees"
     archivo_salida = "data.csv"
 
+    # Parámetros AWS S3
+    bucket_name = "semana6-s2-ejerciciopropuesto"  # <-- Cambia aquí por tu bucket real
+    nombre_s3 = "data.csv"
+
+    # Ejecutar la lectura y guardado
     leer_datos_mysql(host_aws, usuario, contraseña, base_datos, nombre_tabla, archivo_salida)
+
+    # Subir el CSV generado a S3
+    subir_a_s3(archivo_salida, bucket_name, nombre_s3)
